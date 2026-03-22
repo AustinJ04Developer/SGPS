@@ -9,7 +9,7 @@ export default class ErrorBoundary extends React.Component<{ children: React.Rea
     this.state = { hasError: false };
   }
   static getDerivedStateFromError(error: any): State { return { hasError: true, error }; }
-  componentDidCatch(error: any, info: any) {
+  componentDidCatch(error: any, _info: any) {
     if (import.meta.env.DEV) { console.group("ErrorBoundary"); console.error(error); console.groupEnd(); }
   }
 

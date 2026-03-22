@@ -84,8 +84,6 @@ export default function MapView({ data }: { data: Parking[] }) {
     );
   }
 
-  const isSatellite = mapType === "satellite";
-
   return (
     <div style={{
       position: "relative", height: "100%", width: "100%",
