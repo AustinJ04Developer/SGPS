@@ -9,6 +9,7 @@ import type { Parking } from "../types/parking";
 
 export default function MapView({ data }: { data: Parking[] }) {
   const [selected, setSelected] = useState<Parking | null>(null);
+  const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const { isLoaded } = useLoadScript({
@@ -28,6 +29,13 @@ export default function MapView({ data }: { data: Parking[] }) {
       mapRef.current.panTo({ lat: mappable[0].location.lat, lng: mappable[0].location.lng });
     }
   }, [mappable]);
+
+  // Sync mapType state → actual map instance
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setMapTypeId(mapType);
+    }
+  }, [mapType]);
 
   const freeCount   = mappable.filter(p => p.availableSlots > 0 && (p.availableSlots / p.totalSlots) * 100 > 30).length;
   const almostCount = mappable.filter(p => p.availableSlots > 0 && (p.availableSlots / p.totalSlots) * 100 <= 30).length;
@@ -76,6 +84,8 @@ export default function MapView({ data }: { data: Parking[] }) {
     );
   }
 
+  const isSatellite = mapType === "satellite";
+
   return (
     <div style={{
       position: "relative", height: "100%", width: "100%",
@@ -86,16 +96,17 @@ export default function MapView({ data }: { data: Parking[] }) {
         mapContainerStyle={{ height: "100%", width: "100%" }}
         center={center}
         zoom={mappable.length > 0 ? 15 : 12}
+        mapTypeId={mapType}
         onLoad={map => { mapRef.current = map; }}
         options={{
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
           zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
-          styles: [
+          styles: mapType === "roadmap" ? [
             { featureType: "poi",     stylers: [{ visibility: "off" }] },
             { featureType: "transit", stylers: [{ visibility: "simplified" }] },
-          ],
+          ] : [],
         }}
       >
         {/* Only render markers for devices that have a valid GPS fix */}
@@ -175,43 +186,113 @@ export default function MapView({ data }: { data: Parking[] }) {
         )}
       </GoogleMap>
 
-      {/* Top-left: total tracked */}
-      <div style={{
-        position: "absolute", top: 10, left: 10,
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "5px 11px", borderRadius: 99,
-        background: "rgba(255,255,255,0.94)", backdropFilter: "blur(8px)",
-        border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(15,23,42,0.08)",
-        fontSize: 11, fontWeight: 600, color: "#475569", pointerEvents: "none",
+      {/* Top overlay — desktop: one row; mobile: stacked (toggle above tracked) */}
+      <div className="map-overlay" style={{
+        position: "absolute", top: 10, left: 10, right: 10,
+        pointerEvents: "none",
       }}>
-        <span style={{
-          width: 7, height: 7, borderRadius: "50%",
-          background: "#059669", boxShadow: "0 0 0 2px #d1fae5",
-        }} />
-        {data.length} location{data.length !== 1 ? "s" : ""} tracked
-        {mappable.length < data.length && (
-          <span style={{
-            marginLeft: 4, color: "#d97706",
-            fontSize: 10,
+
+        {/* Map type toggle */}
+        <div className="map-toggle-row" style={{ pointerEvents: "auto" }}>
+          <div style={{
+            display: "inline-flex",
+            background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)",
+            border: "1px solid #e2e8f0", borderRadius: 99,
+            boxShadow: "0 1px 4px rgba(15,23,42,0.10)",
+            padding: 3, gap: 2,
           }}>
-            ({data.length - mappable.length} awaiting GPS)
-          </span>
+            {(["roadmap", "satellite"] as const).map(type => {
+              const active = mapType === type;
+              const icon  = type === "roadmap" ? "🗺️" : "🛰️";
+              const label = type === "roadmap" ? "Map" : "Satellite";
+              return (
+                <button
+                  key={type}
+                  onClick={() => setMapType(type)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    padding: "5px 11px", borderRadius: 99,
+                    border: "none", cursor: "pointer",
+                    fontSize: 11, fontWeight: 700,
+                    transition: "all 0.18s ease",
+                    background: active ? "#2563eb" : "transparent",
+                    color: active ? "#fff" : "#64748b",
+                    boxShadow: active ? "0 1px 4px rgba(37,99,235,0.25)" : "none",
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{icon}</span>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tracked count badge */}
+        <div className="map-tracked-row">
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "5px 11px", borderRadius: 99,
+            background: "rgba(255,255,255,0.94)", backdropFilter: "blur(8px)",
+            border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(15,23,42,0.08)",
+            fontSize: 11, fontWeight: 600, color: "#475569",
+          }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: "50%",
+              background: "#059669", boxShadow: "0 0 0 2px #d1fae5", flexShrink: 0,
+            }} />
+            {data.length} location{data.length !== 1 ? "s" : ""} tracked
+            {mappable.length < data.length && (
+              <span style={{ marginLeft: 4, color: "#d97706", fontSize: 10 }}>
+                ({data.length - mappable.length} awaiting GPS)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* GPS pending notice */}
+        {data.some(p => !p.gpsFixed) && (
+          <div className="map-gps-row" style={{ pointerEvents: "auto" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "5px 11px", borderRadius: 99,
+              background: "#fffbeb", backdropFilter: "blur(8px)",
+              border: "1px solid #fcd34d",
+              fontSize: 11, fontWeight: 600, color: "#d97706",
+            }}>
+              ⏳ GPS fix pending…
+            </div>
+          </div>
         )}
       </div>
 
-      {/* GPS pending notice — shown when some devices have no fix yet */}
-      {data.some(p => !p.gpsFixed) && (
-        <div style={{
-          position: "absolute", top: 10, right: 10,
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "5px 11px", borderRadius: 99,
-          background: "#fffbeb", backdropFilter: "blur(8px)",
-          border: "1px solid #fcd34d",
-          fontSize: 11, fontWeight: 600, color: "#d97706",
-        }}>
-          ⏳ GPS fix pending…
-        </div>
-      )}
+      <style>{`
+        /* ── Desktop: all items in one row, tracked left · toggle right ── */
+        @media (min-width: 768px) {
+          .map-overlay {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+          }
+          .map-tracked-row { order: 1; }
+          .map-toggle-row  { order: 2; margin-left: auto; }
+          .map-gps-row     { order: 3; }
+        }
+
+        /* ── Mobile: stacked column, toggle first then tracked ── */
+        @media (max-width: 767px) {
+          .map-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+          }
+          .map-toggle-row  { order: 1; align-self: flex-end; }
+          .map-tracked-row { order: 2; }
+          .map-gps-row     { order: 3; align-self: flex-end; }
+        }
+      `}</style>
 
       {/* Bottom-left: legend */}
       <div style={{

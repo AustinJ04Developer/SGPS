@@ -161,7 +161,6 @@ export const ParkingProvider = ({ children }: { children: React.ReactNode }) => 
           lastUpdated:    new Date().toISOString(),
         };
 
-        // Merge live update into parkings list (replace matching deviceId or append)
         setParkings(prev => {
           const idx = prev.findIndex(p => p.deviceId === liveParking.deviceId);
           if (idx === -1) return [...prev, liveParking];
@@ -215,16 +214,15 @@ export const ParkingProvider = ({ children }: { children: React.ReactNode }) => 
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchParkingData();                                          // initial REST load
-    connectMqtt();                                              // real-time stream
-    pollIntervalRef.current = setInterval(fetchParkingData, 15_000); // REST fallback
+    fetchParkingData();
+    pollIntervalRef.current = setInterval(fetchParkingData, 5_000);
 
     return () => {
       if (retryTimerRef.current)   clearTimeout(retryTimerRef.current);
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       if (clientRef.current) { clientRef.current.end(true); clientRef.current = null; }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const refetch = useCallback(async () => {
     setLoading(true);

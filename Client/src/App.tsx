@@ -7,6 +7,7 @@ import { ParkingProvider } from "../context/ParkingContext";
 import MainLayout from "../layouts/MainLayout";
 import ErrorBoundary from "../components/ErrorBoundary";
 import Dashboard from "../pages/Dashboard";
+import MapPage from "../pages/MapPage";
 import NotFound from "../pages/NotFound";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
 
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/map" element={<MapPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
 

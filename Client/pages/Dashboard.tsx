@@ -4,16 +4,25 @@ import MapView       from "../components/MapView";
 import KpiCards      from "../components/KpiCards";
 import SkeletonCard  from "../components/SkeletonCard";
 import PageWrapper   from "../components/PageWrapper";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, Wifi, WifiOff, Loader2, Map } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const { parkings, loading, error, refetch } = useParking();
+  const { parkings, loading, error, refetch, mqttStatus } = useParking();
+  const navigate = useNavigate();
 
   const totalSlots     = parkings.reduce((s, p) => s + p.totalSlots,     0);
   const availableSlots = parkings.reduce((s, p) => s + p.availableSlots, 0);
   const occupiedSlots  = parkings.reduce((s, p) => s + p.occupiedSlots,  0);
 
-  /* ── LOADING ─────────────────────────────────────────────────────────────── */
+  const streamBadge = {
+    connected:    { label: "Live Stream Active", color: "#059669", bg: "#ecfdf5", border: "#a7f3d0",  Icon: Wifi,          ping: true,  spin: false },
+    connecting:   { label: "Connecting…",        color: "#d97706", bg: "#fffbeb", border: "#fcd34d",  Icon: Loader2,       ping: false, spin: true  },
+    disconnected: { label: "Stream Offline",      color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1",  Icon: WifiOff,       ping: false, spin: false },
+    error:        { label: "Stream Error",        color: "#dc2626", bg: "#fef2f2", border: "#fca5a5",  Icon: AlertTriangle, ping: false, spin: false },
+  }[mqttStatus];
+
+  /* ── LOADING ── */
   if (loading) {
     return (
       <PageWrapper>
@@ -34,7 +43,7 @@ export default function Dashboard() {
     );
   }
 
-  /* ── ERROR (no data at all) ──────────────────────────────────────────────── */
+  /* ── ERROR ── */
   if (error && !parkings.length) {
     return (
       <PageWrapper>
@@ -47,33 +56,23 @@ export default function Dashboard() {
             width: 68, height: 68, borderRadius: 18,
             background: "#fef2f2", border: "1px solid #fca5a5",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, marginBottom: 18,
+            marginBottom: 18,
           }}>
             <AlertTriangle size={30} style={{ color: "#dc2626" }} />
           </div>
-          <h2 style={{
-            fontFamily: "'Outfit', sans-serif", fontWeight: 700,
-            fontSize: 20, color: "#0f172a", marginBottom: 8,
-          }}>
+          <h2 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 20, color: "#0f172a", marginBottom: 8 }}>
             Failed to Load Data
           </h2>
-          <p style={{
-            fontSize: 13, color: "#64748b",
-            maxWidth: 340, lineHeight: 1.6, marginBottom: 22,
-          }}>
+          <p style={{ fontSize: 13, color: "#64748b", maxWidth: 340, lineHeight: 1.6, marginBottom: 22 }}>
             {error}
           </p>
-          <button
-            onClick={refetch}
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "9px 20px", borderRadius: 99,
-              background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
-              color: "#fff", border: "none",
-              fontWeight: 600, fontSize: 13, cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(37,99,235,0.3)",
-            }}
-          >
+          <button onClick={refetch} style={{
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "9px 20px", borderRadius: 99,
+            background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+            color: "#fff", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(37,99,235,0.3)",
+          }}>
             <RefreshCw size={13} /> Try Again
           </button>
         </div>
@@ -81,7 +80,7 @@ export default function Dashboard() {
     );
   }
 
-  /* ── EMPTY (no error, but no data yet) ───────────────────────────────────── */
+  /* ── EMPTY ── */
   if (!parkings.length) {
     return (
       <PageWrapper>
@@ -98,10 +97,7 @@ export default function Dashboard() {
           }}>
             🅿️
           </div>
-          <h2 style={{
-            fontFamily: "'Outfit', sans-serif", fontWeight: 700,
-            fontSize: 20, color: "#0f172a", marginBottom: 8,
-          }}>
+          <h2 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 20, color: "#0f172a", marginBottom: 8 }}>
             No Parking Data Yet
           </h2>
           <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
@@ -122,12 +118,12 @@ export default function Dashboard() {
     );
   }
 
-  /* ── MAIN ────────────────────────────────────────────────────────────────── */
+  /* ── MAIN ── */
   return (
     <PageWrapper>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-        {/* Soft error banner (has stale data but fetch failed) */}
+        {/* Soft error banner */}
         {error && (
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
@@ -136,15 +132,12 @@ export default function Dashboard() {
           }}>
             <AlertTriangle size={15} style={{ color: "#d97706", flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: "#92400e", flex: 1 }}>{error}</span>
-            <button
-              onClick={refetch}
-              style={{
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "4px 12px", borderRadius: 99,
-                background: "#d97706", color: "#fff",
-                border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer",
-              }}
-            >
+            <button onClick={refetch} style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "4px 12px", borderRadius: 99,
+              background: "#d97706", color: "#fff",
+              border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer",
+            }}>
               <RefreshCw size={11} /> Retry
             </button>
           </div>
@@ -167,23 +160,63 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "6px 14px", borderRadius: 99,
-            background: "#ecfdf5", border: "1px solid #a7f3d0",
-            fontSize: 12, fontWeight: 600, color: "#059669",
-          }}>
-            <span style={{ position: "relative", display: "flex", width: 8, height: 8 }}>
-              <span className="status-ping" style={{
-                position: "absolute", inset: 0,
-                borderRadius: "50%", background: "#10b981",
-              }} />
-              <span style={{
-                position: "relative", width: 8, height: 8,
-                borderRadius: "50%", background: "#10b981", display: "block",
-              }} />
-            </span>
-            Live Stream Active
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+            {/* Mobile-only: View Map header button */}
+            <button
+              onClick={() => navigate("/map")}
+              className="mobile-map-btn"
+              style={{
+                display:    "none",
+                alignItems: "center",
+                gap:        6,
+                padding:    "6px 14px",
+                borderRadius: 99,
+                background: "linear-gradient(135deg, #2563eb, #0ea5e9)",
+                color:      "#fff",
+                border:     "none",
+                fontFamily: "'Outfit', sans-serif",
+                fontWeight: 700,
+                fontSize:   12,
+                cursor:     "pointer",
+                boxShadow:  "0 3px 12px rgba(37,99,235,0.28)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Map size={13} />
+              View Map
+            </button>
+
+            {/* Stream status badge */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "6px 14px", borderRadius: 99,
+              background: streamBadge.bg,
+              border: `1px solid ${streamBadge.border}`,
+              fontSize: 12, fontWeight: 600, color: streamBadge.color,
+              transition: "all 0.3s ease",
+            }}>
+              {streamBadge.ping && (
+                <span style={{ position: "relative", display: "flex", width: 8, height: 8 }}>
+                  <span className="status-ping" style={{
+                    position: "absolute", inset: 0,
+                    borderRadius: "50%", background: "#10b981",
+                  }} />
+                  <span style={{
+                    position: "relative", width: 8, height: 8,
+                    borderRadius: "50%", background: "#10b981", display: "block",
+                  }} />
+                </span>
+              )}
+              <streamBadge.Icon
+                size={13}
+                style={{
+                  color: streamBadge.color,
+                  animation: streamBadge.spin ? "spin 1s linear infinite" : "none",
+                }}
+              />
+              {streamBadge.label}
+            </div>
           </div>
         </div>
 
@@ -195,7 +228,7 @@ export default function Dashboard() {
         />
 
         {/* Main grid */}
-        <div style={{
+        <div className="dashboard-grid" style={{
           display: "grid",
           gridTemplateColumns: "320px 1fr",
           gap: 16,
@@ -234,15 +267,33 @@ export default function Dashboard() {
                 <ParkingCard data={p} />
               </div>
             ))}
+
           </div>
 
-          {/* RIGHT: map */}
-          <div style={{ minHeight: 480, height: "calc(100vh - 260px)" }}>
+          {/* RIGHT: map — hidden on mobile */}
+          <div className="dashboard-map-col" style={{ minHeight: 480, height: "calc(100vh - 260px)" }}>
             <MapView data={parkings} />
           </div>
         </div>
 
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 767px) {
+          .dashboard-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .dashboard-map-col {
+            display: none !important;
+          }
+          .mobile-map-btn {
+            display: flex !important;
+          }
+
+        }
+      `}</style>
     </PageWrapper>
   );
 }

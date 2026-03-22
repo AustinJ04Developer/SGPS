@@ -35,8 +35,8 @@ function isValidGPS(lat: number, lng: number): boolean {
 export const client = mqtt.connect(`mqtts://${host}:${port}`, {
   username,
   password,
-  rejectUnauthorized: false, // skip cert verification for HiveMQ Cloud testing
-  reconnectPeriod: 5000,     // auto-reconnect every 5 s
+  rejectUnauthorized: false,
+  reconnectPeriod: 2000,
   connectTimeout: 10000,
 });
 
@@ -144,7 +144,5 @@ client.on("message", async (topic, rawMessage) => {
   // ── Commands topic ─────────────────────────────────────────────────────────
   if (topic === commandsTopic) {
     console.log(`📩 Command received: ${msg}`);
-    // Forward to a specific device topic if needed:
-    // client.publish(`smartparking/${deviceId}/command`, msg);
   }
 });
