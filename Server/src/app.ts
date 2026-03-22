@@ -8,7 +8,9 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/ping", (_req, res) => {
+  res.json({ status: "awake", time: new Date().toISOString() });
+});
 
 app.use("/api/parkings", parkingRoutes);
 
