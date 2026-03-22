@@ -1,0 +1,116 @@
+/* ── Imports must come first ── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-page:      #f1f5f9;
+  --bg-surface:   #ffffff;
+  --bg-muted:     #f8fafc;
+  --border:       #e2e8f0;
+  --border-hover: #93c5fd;
+
+  --accent:       #2563eb;
+  --accent-light: #eff6ff;
+  --accent-mid:   #bfdbfe;
+
+  --green:        #059669;
+  --green-light:  #ecfdf5;
+  --green-border: #a7f3d0;
+  --red:          #dc2626;
+  --red-light:    #fef2f2;
+  --red-border:   #fca5a5;
+  --amber:        #d97706;
+  --amber-light:  #fffbeb;
+  --amber-border: #fcd34d;
+
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+
+  --shadow-sm: 0 1px 4px rgba(15,23,42,0.07), 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md: 0 4px 16px rgba(15,23,42,0.09), 0 2px 4px rgba(15,23,42,0.04);
+  --shadow-lg: 0 10px 36px rgba(15,23,42,0.11), 0 4px 8px rgba(15,23,42,0.05);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle dot grid only on large screens */
+@media (min-width: 1024px) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-mid); }
+
+.font-display { font-family: 'Outfit', sans-serif; }
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { opacity: 0; animation: fadeInUp 0.35s ease forwards; }
+
+@keyframes slotBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+.slot-occupied { animation: slotBlink 1.8s ease-in-out infinite; }
+
+@keyframes ping {
+  0%        { transform: scale(1); opacity: 1; }
+  75%, 100% { transform: scale(2.5); opacity: 0; }
+}
+.status-ping { animation: ping 1.6s ease-out infinite; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8edf3 25%, #f4f7fb 50%, #e8edf3 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Layout helpers ── */
+#root {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.map-container {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
